@@ -12,7 +12,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
-from . import analysis, config, db, diet_rules, gemini, images, nutrition
+from . import analysis, baselines, config, db, diet_rules, gemini, images, longterm, nutrition
 from .schemas import AnalyzeResponse, BeforeCheckResponse, ConfirmRequest, ConfirmResponse, TrayAnalysis
 
 logging.basicConfig(level=logging.INFO)
@@ -371,7 +371,6 @@ def confirm_meal(meal_id: int, body: ConfirmRequest):
         adjusted_items=[m for m, p in given.items() if m in ai_pcts and ai_pcts[m] != p],
     )
 
-from . import analysis, baselines, config, db, diet_rules, gemini, images, longterm, nutrition
 
 @app.get("/api/residents/{resident_id}/intake-history")
 def intake_history(resident_id: int, days: int = 30):

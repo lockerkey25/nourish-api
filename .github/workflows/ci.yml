@@ -74,16 +74,24 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Unique name and no published port, so runs can't collide on a shared self-hosted Docker host.
       - name: Smoke test container
+        env:
+          CONTAINER: nourish-api-ci-${{ github.run_id }}-${{ github.run_attempt }}
         run: |
-          docker run -d --name nourish-api -p 8000:8000 nourish-api:ci
+          docker run -d --name "$CONTAINER" nourish-api:ci
           for i in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:8000/api/health; then exit_code=0; break; fi
-            exit_code=1; sleep 1
+            if docker exec "$CONTAINER" python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/api/health').read().decode())"; then
+              exit 0
+            fi
+            sleep 1
           done
-          docker logs nourish-api
-          docker rm -f nourish-api
-          exit $exit_code
+          docker logs "$CONTAINER"
+          exit 1
+
+      - name: Remove smoke test container
+        if: always()
+        run: docker rm -f nourish-api-ci-${{ github.run_id }}-${{ github.run_attempt }} || true
 
       - name: Log in to GHCR
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
